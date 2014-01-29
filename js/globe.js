@@ -2,24 +2,70 @@
 var POS_X = 1800;
 var POS_Y = 500;
 var POS_Z = 1800;
+var DISTANCE = 2500;
 var WIDTH = 1000;
 var HEIGHT = 600;
+var PI_HALF = Math.PI / 2;
 
 var FOV = 45;
 var NEAR = 1;
 var FAR = 4000;
 
 var target = {
-  x: POS_X,
-  y: POS_Y,
-  z: POS_Z
+  x: 0,
+  y: 0
+};
+
+var Shaders = {
+  'earth' : {
+    uniforms: {
+      'texture': { type: 't', value: null }
+    },
+    vertexShader: [
+      'varying vec3 vNormal;',
+      'varying vec2 vUv;',
+      'void main() {',
+        'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+        'vNormal = normalize( normalMatrix * normal );',
+        'vUv = uv;',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D texture;',
+      'varying vec3 vNormal;',
+      'varying vec2 vUv;',
+      'void main() {',
+        'vec3 diffuse = texture2D( texture, vUv ).xyz;',
+        'float intensity = 1.05 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) );',
+        'vec3 atmosphere = vec3( 1.0, 1.0, 1.0 ) * pow( intensity, 3.0 );',
+        'gl_FragColor = vec4( diffuse + atmosphere, 1.0 );',
+      '}'
+    ].join('\n')
+  },
+  'atmosphere' : {
+    uniforms: {},
+    vertexShader: [
+      'varying vec3 vNormal;',
+      'void main() {',
+        'vNormal = normalize( normalMatrix * normal );',
+        'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying vec3 vNormal;',
+      'void main() {',
+        'float intensity = pow( 0.8 - dot( vNormal, vec3( 0, 0, 1.0 ) ), 12.0 );',
+        'gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 ) * intensity;',
+      '}'
+    ].join('\n')
+  }
 };
 
 // some global variables and initialization code
 // simple basic renderer
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(WIDTH,HEIGHT);
-renderer.setClearColorHex(0x111111);
+renderer.setClearColorHex(0x000000);
 
 // add it to the target element
 var mapDiv = document.getElementById("globe");
@@ -42,6 +88,22 @@ function addEarth() {
         shininess: 0.2 } );
     sp = new THREE.Mesh(spGeo,mat2);
     scene.add(sp);
+
+    var shader = Shaders['atmosphere'];
+    uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+
+    material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: shader.vertexShader,
+      fragmentShader: shader.fragmentShader,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+
+    mesh = new THREE.Mesh(spGeo, material);
+    mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
+    scene.add(mesh);
 }
 
 function addLights() {
@@ -52,42 +114,129 @@ function addLights() {
     light.position.set(POS_X,POS_Y,POS_Z);
 }
 
-function addData(publish, subscribes) {
+// I have no idea what I'm doing
+// This is from a chrome experiment
+function latLonToVector3(lat, lon) {
+  var point = new THREE.Vector3(0, 0, 0);
 
-    var ctx = $('#canvas')[0].getContext("2d");
-    ctx.clearRect(0,0,1024,512);
+  lon = lon + 10;
+  lat = lat - 2;
 
-    var pub_lat = publish[0];
-    var pub_lng = publish[1];
-    var pub_x =   ((1024/360.0) * (180 + pub_lng));
-    var pub_y =   ((512/180.0) * (90 - pub_lat));
+  var phi = PI_HALF - lat * Math.PI / 180 - Math.PI * 0.01;
+  var theta = 2 * Math.PI - lon * Math.PI / 180 + Math.PI * 0.06;
+  var rad = 600;
 
-    ctx.fillStyle = "#F1C40F";
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.arc(pub_x, pub_y, 7, 0, 2*Math.PI, false);
-    ctx.fill();
+  point.x = Math.sin(phi) * Math.cos(theta) * rad;
+  point.y = Math.cos(phi) * rad;
+  point.z = Math.sin(phi) * Math.sin(theta) * rad;
 
-    for (i = 0; i < subscribes.length; i++) {
-      var sub_lat = subscribes[i][0];
-      var sub_lng = subscribes[i][1];
-      var sub_x =   ((1024/360.0) * (180 + sub_lng));
-      var sub_y =   ((512/180.0) * (90 - sub_lat));
+  return point;
+};
 
-      ctx.strokeStyle = "#1ABC9C";
-      ctx.lineWidth= 2;
-      ctx.beginPath();
-      ctx.moveTo(pub_x, pub_y);
-      ctx.lineTo(sub_x, sub_y);
-      ctx.stroke();
+function bezierCurveBetween(startVec3, endVec3, value) {
+  value = 10;
+  var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
-      ctx.fillStyle = "#F1C40F";
-      ctx.globalAlpha = 0.5;
-      ctx.beginPath();
-      ctx.arc(sub_x, sub_y, 3, 0, 2*Math.PI, false);
-      ctx.fill();
+  var anchorHeight = 600 + distanceBetweenPoints * 0.7;
 
+  var mid = startVec3.clone().lerp(endVec3, 0.5);
+  var midLength = mid.length();
+  mid.normalize();
+  mid.multiplyScalar(midLength + distanceBetweenPoints * 0.7);
+
+  var normal = (new THREE.Vector3()).subVectors(startVec3, endVec3);
+  normal.normalize();
+
+  var distanceHalf = distanceBetweenPoints * 0.5;
+
+  var startAnchor = startVec3;
+  var midStartAnchor = mid.clone().add(normal.clone().multiplyScalar(distanceHalf));
+  var midEndAnchor = mid.clone().add(normal.clone().multiplyScalar(-distanceHalf));
+  var endAnchor = endVec3;
+
+  // Now make a bezier curve
+  var splineCurveA = new THREE.CubicBezierCurve3(startVec3, startAnchor, midStartAnchor, mid);
+  var splineCurveB = new THREE.CubicBezierCurve3(mid, midEndAnchor, endAnchor, endVec3);
+
+  var vertexCountDesired = Math.floor(distanceBetweenPoints * 0.02 + 6) * 2;
+
+  var points = splineCurveA.getPoints(vertexCountDesired);
+  points = points.splice(0, points.length - 1);
+  points = points.concat(splineCurveB.getPoints(vertexCountDesired));
+
+  // points.push(vec3_origin);
+
+  var val = value * 0.0003;
+
+  var size = (10 + Math.sqrt(val));
+  size = constrain(size, 0.1, 60);
+
+  var geometry = new THREE.Geometry();
+  geometry.dynamic = true;
+  geometry.finishedAnimation = false;
+  for (var i = 0; i < points.length; i++) {
+    geometry.vertices.push(new THREE.Vector3());
+  }
+  geometry.size = size;
+
+  var n = 0;
+  function tweenPoint() {
+    var point = points.shift();
+    for (var j = n; j < geometry.vertices.length; j++) {
+      geometry.vertices[j].set(point.x, point.y, point.z);
     }
+    geometry.verticesNeedUpdate = true;
+    n++;
+
+    if (points.length > 0) {
+      requestAnimationFrame(tweenPoint);
+    } else {
+      geometry.finishedAnimation = true;
+    }
+  }
+  requestAnimationFrame(tweenPoint);
+
+  return geometry;
+};
+
+function constrain(v, min, max){
+  if( v < min )
+    v = min;
+  else
+  if( v > max )
+    v = max;
+  return v;
+}
+
+var lines = [];
+function addData(publish, subscribes) {
+  // Remove current lines
+  var i = lines.length;
+  while(i--) {
+    if (lines[i].geometry.finishedAnimation == true) {
+      scene.remove(lines[i]);
+      lines.splice(i, 1);
+    }
+  }
+
+  var pubLatLon = { lat: publish[0], lon: publish[1] };
+  var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
+  var color = '#'+Math.floor(Math.random()*16777215).toString(16);
+
+  for (var i = 0; i < subscribes.length; i++) {
+    var subLatLon = { lat: subscribes[i][0], lon: subscribes[i][1] };
+    var subVec3 = latLonToVector3(subLatLon.lat, subLatLon.lon);
+
+    var material = new THREE.LineBasicMaterial({
+      color: color
+    });
+
+    var geometry = bezierCurveBetween(pubVec3, subVec3);
+
+    var line = new THREE.Line(geometry, material);
+    lines.push(line);
+    scene.add(line);
+  }
 }
 
 var texture;
@@ -104,7 +253,7 @@ function addOverlay() {
     });
 
     var meshOverlay = new THREE.Mesh(spGeo,material);
-    scene.add(meshOverlay);
+    //scene.add(meshOverlay);
 }
 
 var timer = 0;
@@ -112,9 +261,9 @@ var rotateSpeed = 0.008;
 function render() {
     texture.needsUpdate = true;
     // timer+=rotateSpeed;
-    camera.position.x = 1800 * Math.sin(target.x) * Math.cos(target.y);
-    camera.position.y = 1800 * Math.sin(target.y);
-    camera.position.z = 1800 * Math.cos(target.x) * Math.cos(target.y);
+    camera.position.x = DISTANCE * Math.sin(target.x) * Math.cos(target.y);
+    camera.position.y = DISTANCE * Math.sin(target.y);
+    camera.position.z = DISTANCE * Math.cos(target.x) * Math.cos(target.y);
     camera.lookAt( scene.position );
 
     light.position = camera.position;

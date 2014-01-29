@@ -11,7 +11,7 @@
     isDown = true;
     onDownMouse = {
       x: event.clientX,
-      y: event.clientY
+      y: -event.clientY
     };
     targetDownMouse = {
       x: target.x,
@@ -26,10 +26,13 @@
   el.on('mousemove', function (event) {
     if (isDown == true) {
       var mouseX = event.clientX,
-          mouseY = event.clientY;
+          mouseY = -event.clientY;
 
       target.x = targetDownMouse.x + (onDownMouse.x - mouseX) * 0.005;
       target.y = targetDownMouse.y + (onDownMouse.y - mouseY) * 0.005;
+
+      target.y = target.y > PI_HALF ? PI_HALF : target.y;
+      target.y = target.y < -PI_HALF ? -PI_HALF : target.y;
     }
   });
 })();
