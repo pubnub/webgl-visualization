@@ -9,6 +9,12 @@ var FOV = 45;
 var NEAR = 1;
 var FAR = 4000;
 
+var target = {
+  x: POS_X,
+  y: POS_Y,
+  z: POS_Z
+};
+
 // some global variables and initialization code
 // simple basic renderer
 var renderer = new THREE.WebGLRenderer();
@@ -105,9 +111,10 @@ var timer = 0;
 var rotateSpeed = 0.008;
 function render() {
     texture.needsUpdate = true;
-    timer+=rotateSpeed;
-    camera.position.x = (Math.cos( timer ) *  1800);
-    camera.position.z = (Math.sin( timer ) *  1800);
+    // timer+=rotateSpeed;
+    camera.position.x = 1800 * Math.sin(target.x) * Math.cos(target.y);
+    camera.position.y = 1800 * Math.sin(target.y);
+    camera.position.z = 1800 * Math.cos(target.x) * Math.cos(target.y);
     camera.lookAt( scene.position );
 
     light.position = camera.position;
