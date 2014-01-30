@@ -6,6 +6,8 @@ var DISTANCE = 2500;
 var WIDTH = 1000;
 var HEIGHT = 600;
 var PI_HALF = Math.PI / 2;
+var IDLE = true;
+var IDLE_TIME = 1000 * 3;
 
 var FOV = 45;
 var NEAR = 1;
@@ -65,11 +67,27 @@ var Shaders = {
 // simple basic renderer
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(WIDTH,HEIGHT);
-renderer.setClearColorHex(0x000000);
+renderer.setClearColorHex(0x00000000, 0.0);
 
 // add it to the target element
 var mapDiv = document.getElementById("globe");
 mapDiv.appendChild(renderer.domElement);
+
+// Create background image scene
+var txt = THREE.ImageUtils.loadTexture('assets/starfield_background.jpg');
+var bgMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2, 0),
+  new THREE.MeshBasicMaterial({
+    map: txt,
+    depthTest: false,
+    depthWrite: false
+  }));
+bgMesh.material.depthTest = false;
+bgMesh.material.depthWrite = false;
+var bgScene = new THREE.Scene();
+var bgCamera = new THREE.Camera();
+bgScene.add(bgCamera);
+bgScene.add(bgMesh);
 
 // setup a camera that points to the center
 var camera = new THREE.PerspectiveCamera(FOV,WIDTH/HEIGHT,NEAR,FAR);
@@ -82,12 +100,22 @@ scene.add(camera);
 
 function addEarth() {
     var spGeo = new THREE.SphereGeometry(600,50,50);
-    var planetTexture = THREE.ImageUtils.loadTexture( "assets/world.jpg" );
-    var mat2 =  new THREE.MeshPhongMaterial( {
-        map: planetTexture,
-        shininess: 0.2 } );
-    sp = new THREE.Mesh(spGeo,mat2);
-    scene.add(sp);
+
+    var shader = Shaders['earth'];
+    uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+
+    uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world2.jpg');
+
+    material = new THREE.ShaderMaterial({
+
+          uniforms: uniforms,
+          vertexShader: shader.vertexShader,
+          fragmentShader: shader.fragmentShader
+
+        });
+
+    mesh = new THREE.Mesh(spGeo, material);
+    scene.add(mesh);
 
     var shader = Shaders['atmosphere'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
@@ -102,16 +130,8 @@ function addEarth() {
     });
 
     mesh = new THREE.Mesh(spGeo, material);
-    mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
+    mesh.scale.set(1.1, 1.1, 1.1);
     scene.add(mesh);
-}
-
-function addLights() {
-    light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
-    //light = new THREE.DirectionalLight(0x3498DB, 3.5, 500 );
-    //light = new THREE.DirectionalLight(0xBDC3C7, 2.5, 500 );
-    scene.add(light);
-    light.position.set(POS_X,POS_Y,POS_Z);
 }
 
 // I have no idea what I'm doing
@@ -134,15 +154,14 @@ function latLonToVector3(lat, lon) {
 };
 
 function bezierCurveBetween(startVec3, endVec3, value) {
-  value = 10;
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
-  var anchorHeight = 600 + distanceBetweenPoints * 0.7;
+  var anchorHeight = 600 + distanceBetweenPoints * 0.5;
 
   var mid = startVec3.clone().lerp(endVec3, 0.5);
   var midLength = mid.length();
   mid.normalize();
-  mid.multiplyScalar(midLength + distanceBetweenPoints * 0.7);
+  mid.multiplyScalar(midLength + distanceBetweenPoints * 0.5);
 
   var normal = (new THREE.Vector3()).subVectors(startVec3, endVec3);
   normal.normalize();
@@ -166,6 +185,12 @@ function bezierCurveBetween(startVec3, endVec3, value) {
 
   // points.push(vec3_origin);
 
+  return points;
+}
+
+var tweens = [];
+function tweenPoints(points) {
+  var value = 10;
   var val = value * 0.0003;
 
   var size = (10 + Math.sqrt(val));
@@ -179,25 +204,36 @@ function bezierCurveBetween(startVec3, endVec3, value) {
   }
   geometry.size = size;
 
-  var n = 0;
-  function tweenPoint() {
-    var point = points.shift();
-    for (var j = n; j < geometry.vertices.length; j++) {
+  tweens.push({
+    n: 0,
+    points: points,
+    geometry: geometry,
+    time: 100
+  });
+
+  return geometry;
+}
+
+function tweenPoint() {
+  var i = tweens.length;
+  while(i--) {
+    var tween = tweens[i];
+    var point = tween.points.shift();
+    var geometry = tween.geometry;
+    for (var j = tween.n; j < geometry.vertices.length; j++) {
       geometry.vertices[j].set(point.x, point.y, point.z);
     }
     geometry.verticesNeedUpdate = true;
-    n++;
+    tween.n++;
 
-    if (points.length > 0) {
-      requestAnimationFrame(tweenPoint);
-    } else {
+    tween.time = 100;
+
+    if (tween.points.length <= 0) {
       geometry.finishedAnimation = true;
+      tweens.splice(i, 1);
     }
   }
-  requestAnimationFrame(tweenPoint);
-
-  return geometry;
-};
+}
 
 function constrain(v, min, max){
   if( v < min )
@@ -221,17 +257,21 @@ function addData(publish, subscribes) {
 
   var pubLatLon = { lat: publish[0], lon: publish[1] };
   var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
-  var color = '#'+Math.floor(Math.random()*16777215).toString(16);
+  var c = new THREE.Color();
+  var x = Math.random();
+  c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
 
   for (var i = 0; i < subscribes.length; i++) {
     var subLatLon = { lat: subscribes[i][0], lon: subscribes[i][1] };
     var subVec3 = latLonToVector3(subLatLon.lat, subLatLon.lon);
 
     var material = new THREE.LineBasicMaterial({
-      color: color
+      color: c,
+      linewidth: 2
     });
 
-    var geometry = bezierCurveBetween(pubVec3, subVec3);
+    var points = bezierCurveBetween(pubVec3, subVec3);
+    var geometry = tweenPoints(points);
 
     var line = new THREE.Line(geometry, material);
     lines.push(line);
@@ -239,38 +279,36 @@ function addData(publish, subscribes) {
   }
 }
 
-var texture;
-function addOverlay() {
-    var spGeo = new THREE.SphereGeometry(604,50,50);
-    texture = new THREE.Texture($('#canvas')[0]);
+function checkIdle() {
+  if (IDLE === true) {
+    target.x += 0.001;
 
-    var material = new THREE.MeshBasicMaterial({
-        map : texture,
-        transparent : true,
-        opacity: 0.7,
-        blending: THREE.AdditiveAlphaBlending
+    if (target.y > 0) target.y -= 0.001;
+    if (target.y < 0) target.y += 0.001;
 
-    });
+    if (Math.abs(target.y) < 0.01) target.y = 0;
+  }
+};
 
-    var meshOverlay = new THREE.Mesh(spGeo,material);
-    //scene.add(meshOverlay);
-}
-
-var timer = 0;
-var rotateSpeed = 0.008;
+var rotation = { x: 0, y: 0 };
 function render() {
-    texture.needsUpdate = true;
-    // timer+=rotateSpeed;
-    camera.position.x = DISTANCE * Math.sin(target.x) * Math.cos(target.y);
-    camera.position.y = DISTANCE * Math.sin(target.y);
-    camera.position.z = DISTANCE * Math.cos(target.x) * Math.cos(target.y);
-    camera.lookAt( scene.position );
+  tweenPoint();
 
-    light.position = camera.position;
-    light.lookAt(scene.position);
+  rotation.x += (target.x - rotation.x) * 0.1;
+  rotation.y += (target.y - rotation.y) * 0.1;
 
-    renderer.render( scene, camera );
-    requestAnimationFrame( render );
+  checkIdle();
+
+  camera.position.x = DISTANCE * Math.sin(rotation.x) * Math.cos(rotation.y);
+  camera.position.y = DISTANCE * Math.sin(rotation.y);
+  camera.position.z = DISTANCE * Math.cos(rotation.x) * Math.cos(rotation.y);
+  camera.lookAt( scene.position );
+
+  renderer.autoClear = false;
+  renderer.clear();
+  renderer.render( bgScene, bgCamera );
+  renderer.render( scene, camera );
+  requestAnimationFrame( render );
 }
 
 function handleMsg(msg) {
@@ -290,8 +328,6 @@ pubnub.subscribe({
   }
 });
 
-addLights();
 addEarth();
-addOverlay();
 render();
 
