@@ -144,7 +144,7 @@ function addEarth() {
   });
 
   var mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(300, 300, 1500);
+  mesh.position.set(300, 0, 1500);
   pivot.add(mesh);
   scene.add(pivot);
 }
@@ -364,8 +364,7 @@ function render() {
 
   overlay.needsUpdate = true;
 
-  pivot.rotation.z += 0.01;
-  pivot.rotation.x += 0.01;
+  pivot.rotation.y -= 0.01;
 
   rotation.x += (target.x - rotation.x) * 0.1;
   rotation.y += (target.y - rotation.y) * 0.1;
