@@ -318,7 +318,7 @@ function addData(publish, subscribes) {
 
 function checkIdle() {
   if (IDLE === true) {
-    target.x += 0.001;
+    target.x -= 0.001;
 
     if (target.y > 0) target.y -= 0.001;
     if (target.y < 0) target.y += 0.001;
@@ -364,7 +364,7 @@ function render() {
 
   overlay.needsUpdate = true;
 
-  pivot.rotation.y -= 0.01;
+  pivot.rotation.y += 0.01;
 
   rotation.x += (target.x - rotation.x) * 0.1;
   rotation.y += (target.y - rotation.y) * 0.1;
