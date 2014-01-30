@@ -45,4 +45,19 @@
       target.y = target.y < -PI_HALF ? -PI_HALF : target.y;
     }
   });
+
+  renderer.domElement.addEventListener('mousewheel', function (event) {
+    DISTANCE -= event.wheelDeltaY * 0.3;
+    if (DISTANCE > 3000) DISTANCE = 3000;
+    if (DISTANCE < 1300) DISTANCE = 1300;
+    event.preventDefault();
+    return false;
+  });
+
+  $('#fullscreen').on('click', function (event) {
+    var el = document.querySelector('#globe canvas');
+    if (el.requestFullScreen) el.requestFullScreen();
+    if (el.webkitRequestFullScreen) el.webkitRequestFullScreen();
+    if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+  });
 })();

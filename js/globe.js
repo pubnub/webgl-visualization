@@ -67,14 +67,14 @@ var Shaders = {
 // simple basic renderer
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(WIDTH,HEIGHT);
-renderer.setClearColorHex(0x00000000, 0.0);
+renderer.setClearColor(0x00000000, 0.0);
 
 // add it to the target element
 var mapDiv = document.getElementById("globe");
 mapDiv.appendChild(renderer.domElement);
 
 // Create background image scene
-var txt = THREE.ImageUtils.loadTexture('assets/starfield_background.jpg');
+var txt = THREE.ImageUtils.loadTexture('assets/galaxy_starfield.png');
 var bgMesh = new THREE.Mesh(
   new THREE.PlaneGeometry(2, 2, 0),
   new THREE.MeshBasicMaterial({
@@ -98,40 +98,55 @@ camera.lookAt(new THREE.Vector3(0,0,0));
 var scene = new THREE.Scene();
 scene.add(camera);
 
+var pivot;
 function addEarth() {
-    var spGeo = new THREE.SphereGeometry(600,50,50);
+  // Add sphere earth geometry
+  var spGeo = new THREE.SphereGeometry(600,50,50);
 
-    var shader = Shaders['earth'];
-    uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+  var shader = Shaders['earth'];
+  uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world2.jpg');
+  uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world2.jpg');
 
-    material = new THREE.ShaderMaterial({
+  material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: shader.vertexShader,
+    fragmentShader: shader.fragmentShader
+  });
 
-          uniforms: uniforms,
-          vertexShader: shader.vertexShader,
-          fragmentShader: shader.fragmentShader
+  mesh = new THREE.Mesh(spGeo, material);
+  scene.add(mesh);
 
-        });
+  // Add atmosphere glow
+  var shader = Shaders['atmosphere'];
+  uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    mesh = new THREE.Mesh(spGeo, material);
-    scene.add(mesh);
+  material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: shader.vertexShader,
+    fragmentShader: shader.fragmentShader,
+    side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    transparent: true
+  });
 
-    var shader = Shaders['atmosphere'];
-    uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+  mesh = new THREE.Mesh(spGeo, material);
+  mesh.scale.set(1.1, 1.1, 1.1);
+  scene.add(mesh);
 
-    material = new THREE.ShaderMaterial({
-      uniforms: uniforms,
-      vertexShader: shader.vertexShader,
-      fragmentShader: shader.fragmentShader,
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
-      transparent: true
-    });
+  // Add moon
+  pivot = new THREE.Object3D();
+  var geometry = new THREE.SphereGeometry(60, 50, 50);
 
-    mesh = new THREE.Mesh(spGeo, material);
-    mesh.scale.set(1.1, 1.1, 1.1);
-    scene.add(mesh);
+  var tex = THREE.ImageUtils.loadTexture('assets/pubnub.png');
+  var material = new THREE.MeshBasicMaterial({
+    map: tex
+  });
+
+  var mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(300, 300, 1500);
+  pivot.add(mesh);
+  scene.add(pivot);
 }
 
 // I have no idea what I'm doing
@@ -321,7 +336,7 @@ function addOverlay() {
     map: overlay,
     transparent: true,
     opacity: 0.7,
-    blending: THREE.AdditiveAlphaBlending
+    blending: THREE.AdditiveBlending
   });
 
   var meshOverlay = new THREE.Mesh(spGeo, material);
@@ -348,6 +363,9 @@ function render() {
   };
 
   overlay.needsUpdate = true;
+
+  pivot.rotation.z += 0.01;
+  pivot.rotation.x += 0.01;
 
   rotation.x += (target.x - rotation.x) * 0.1;
   rotation.y += (target.y - rotation.y) * 0.1;

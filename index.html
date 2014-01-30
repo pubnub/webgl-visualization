@@ -17,11 +17,41 @@
 
       canvas {
         position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      #globe {
+        position: relative;
+      }
+
+      #fullscreen {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: url(assets/fullscreen.png);
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+      }
+
+      #pubnub {
+        position: absolute;
+        top: 20px !important;
+        left: 20px !important;
+        z-index: 200;
+        background: url(assets/logo.png);
+        background-size: cover;
+        width: 200px;
+        height: 43px;
       }
     </style>
   </head>
   <body>
-    <div id="globe"></div>
+    <div id="globe">
+      <div id="pubnub"></div>
+    </div>
+    <div id="fullscreen"></div>
     <canvas id="canvas" width="1024" height="512" style="display: none;"></canvas>
     <script src=http://cdn.pubnub.com/pubnub.min.js ></script>
     <script src="js/jquery-1.10.1.min.js"></script>
