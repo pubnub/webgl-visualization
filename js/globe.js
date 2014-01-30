@@ -3,8 +3,8 @@ var POS_X = 1800;
 var POS_Y = 500;
 var POS_Z = 1800;
 var DISTANCE = 2500;
-var WIDTH = 1000;
-var HEIGHT = 600;
+var WIDTH = window.innerWidth;
+var HEIGHT = window.innerHeight;
 var PI_HALF = Math.PI / 2;
 var IDLE = true;
 var IDLE_TIME = 1000 * 3;
@@ -208,7 +208,7 @@ function tweenPoints(points) {
     n: 0,
     points: points,
     geometry: geometry,
-    time: 100
+    time: Date.now()
   });
 
   return geometry;
@@ -226,9 +226,7 @@ function tweenPoint() {
     geometry.verticesNeedUpdate = true;
     tween.n++;
 
-    tween.time = 100;
-
-    if (tween.points.length <= 0) {
+    if (tween.points.length <= 0 || Date.now() - tween.time > 2000) {
       geometry.finishedAnimation = true;
       tweens.splice(i, 1);
     }
@@ -244,7 +242,22 @@ function constrain(v, min, max){
   return v;
 }
 
-var lines = [];
+var lines = [],
+    points = [],
+    lineColors = [],
+    ctx = document.querySelector('#canvas').getContext('2d');
+
+// Generate a set of colors to use
+for (var i = 0; i < 10; i++) {
+  var c = new THREE.Color();
+  var x = Math.random();
+  c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
+
+  lineColors.push(new THREE.LineBasicMaterial({
+    color: c,
+    linewidth: 2
+  }));
+}
 function addData(publish, subscribes) {
   // Remove current lines
   var i = lines.length;
@@ -255,25 +268,34 @@ function addData(publish, subscribes) {
     }
   }
 
+  var i = points.length;
+  while(i--) {
+    if (Date.now() - points[i].time > 1000) {
+      points.splice(i, 1);
+    }
+  }
+
   var pubLatLon = { lat: publish[0], lon: publish[1] };
   var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
-  var c = new THREE.Color();
-  var x = Math.random();
-  c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
+  var materialIndex = Math.floor(Math.random() * 11);
+
+  var pub_x =   ((1024/360.0) * (180 + pubLatLon.lon));
+  var pub_y =   ((512/180.0) * (90 - pubLatLon.lat));
+
+  points.push({
+    x: pub_x,
+    y: pub_y,
+    time: Date.now()
+  });
 
   for (var i = 0; i < subscribes.length; i++) {
     var subLatLon = { lat: subscribes[i][0], lon: subscribes[i][1] };
     var subVec3 = latLonToVector3(subLatLon.lat, subLatLon.lon);
 
-    var material = new THREE.LineBasicMaterial({
-      color: c,
-      linewidth: 2
-    });
+    var linePoints = bezierCurveBetween(pubVec3, subVec3);
+    var geometry = tweenPoints(linePoints);
 
-    var points = bezierCurveBetween(pubVec3, subVec3);
-    var geometry = tweenPoints(points);
-
-    var line = new THREE.Line(geometry, material);
+    var line = new THREE.Line(geometry, lineColors[materialIndex]);
     lines.push(line);
     scene.add(line);
   }
@@ -290,9 +312,42 @@ function checkIdle() {
   }
 };
 
+var overlay;
+function addOverlay() {
+  var spGeo = new THREE.SphereGeometry(604, 50, 50);
+  overlay = new THREE.Texture(document.querySelector('#canvas'));
+
+  var material = new THREE.MeshBasicMaterial({
+    map: overlay,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveAlphaBlending
+  });
+
+  var meshOverlay = new THREE.Mesh(spGeo, material);
+  scene.add(meshOverlay);
+}
+
+function onWindowResize(event) {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
 var rotation = { x: 0, y: 0 };
 function render() {
   tweenPoint();
+
+  ctx.clearRect(0,0,1024,512);
+  for (var i = 0; i < points.length; i++) {
+    ctx.fillStyle = "#F1C40F";
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.arc(points[i].x, points[i].y, 7, 0, 2*Math.PI, false);
+    ctx.fill();
+  };
+
+  overlay.needsUpdate = true;
 
   rotation.x += (target.x - rotation.x) * 0.1;
   rotation.y += (target.y - rotation.y) * 0.1;
@@ -308,8 +363,14 @@ function render() {
   renderer.clear();
   renderer.render( bgScene, bgCamera );
   renderer.render( scene, camera );
-  requestAnimationFrame( render );
 }
+
+function animate() {
+  requestAnimationFrame(animate);
+  render();
+}
+
+window.addEventListener('resize', onWindowResize);
 
 function handleMsg(msg) {
   addData(msg.pub, msg.subs);
@@ -323,11 +384,11 @@ var pubnub = PUBNUB.init({
 pubnub.subscribe({
   channel  : "real-time-stats-geostats",
   callback : function(message) {
-      //console.log( " > ", message );
-      handleMsg(message)
+    handleMsg(message);
   }
 });
 
 addEarth();
-render();
+addOverlay();
+animate();
 
