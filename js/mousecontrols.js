@@ -55,7 +55,7 @@
   });
 
   $('#fullscreen').on('click', function (event) {
-    var el = document.querySelector('#globe canvas');
+    var el = document.querySelector('#globe');
     if (el.requestFullScreen) el.requestFullScreen();
     if (el.webkitRequestFullScreen) el.webkitRequestFullScreen();
     if (el.mozRequestFullScreen) el.mozRequestFullScreen();
