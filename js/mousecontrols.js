@@ -47,9 +47,9 @@
   });
 
   renderer.domElement.addEventListener('mousewheel', function (event) {
-    DISTANCE -= event.wheelDeltaY * 0.3;
-    if (DISTANCE > 3000) DISTANCE = 3000;
-    if (DISTANCE < 1300) DISTANCE = 1300;
+    target.zoom -= event.wheelDeltaY * 0.3;
+    if (target.zoom > 3000) target.zoom = 3000;
+    if (target.zoom < 1300) target.zoom = 1300;
     event.preventDefault();
     return false;
   });

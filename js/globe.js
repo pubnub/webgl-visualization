@@ -2,7 +2,7 @@
 var POS_X = 1800;
 var POS_Y = 500;
 var POS_Z = 1800;
-var DISTANCE = 2500;
+var DISTANCE = 10000;
 var WIDTH = window.innerWidth;
 var HEIGHT = window.innerHeight;
 var PI_HALF = Math.PI / 2;
@@ -14,8 +14,9 @@ var NEAR = 1;
 var FAR = 4000;
 
 var target = {
-  x: 0,
-  y: 0
+  x: -2,
+  y: 0,
+  zoom: 2500
 };
 
 var Shaders = {
@@ -371,6 +372,7 @@ function render() {
 
   rotation.x += (target.x - rotation.x) * 0.1;
   rotation.y += (target.y - rotation.y) * 0.1;
+  DISTANCE += (target.zoom - DISTANCE) * 0.3;
 
   checkIdle();
 
