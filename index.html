@@ -11,6 +11,7 @@
       }
 
       body {
+        font-family: 'Helvetica Neue', Helvetica, sans-serif;
         background: black;
         margin: 0;
       }
@@ -25,6 +26,8 @@
         position: absolute;
         top: 0;
         left: 0;
+        width: 100%;
+        height: 100%;
       }
 
       #fullscreen {
@@ -47,11 +50,24 @@
         width: 200px;
         height: 43px;
       }
+
+      #info {
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        position: absolute;
+        bottom: 20px !important;
+        left: 50% !important;
+        margin-left: -144.5px;
+        display: block;
+        z-index: 201;
+      }
     </style>
   </head>
   <body>
     <div id="globe">
       <div id="pubnub"></div>
+      <div id="info">Displaying less than 0.01% of real-time traffic</div>
     </div>
     <div id="fullscreen"></div>
     <canvas id="canvas" width="1024" height="512" style="display: none;"></canvas>
