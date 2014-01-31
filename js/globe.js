@@ -145,7 +145,9 @@ function addEarth() {
 
   var mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(300, 0, 1500);
-  mesh.rotation.x += 0.5;
+  mesh.rotation.x -= 0.6;
+  mesh.rotation.y -= 1;
+  mesh.rotation.z += 0;
   pivot.add(mesh);
   scene.add(pivot);
 }
