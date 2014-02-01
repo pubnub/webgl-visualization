@@ -13,6 +13,42 @@ var FOV = 45;
 var NEAR = 1;
 var FAR = 4000;
 
+// Use the visibility API to avoid creating a ton of data when the user is not looking
+var VISIBLE = true;
+
+// Set the name of the hidden property and the change event for visibility
+var hidden, visibilityChange; 
+if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+  hidden = "hidden";
+  visibilityChange = "visibilitychange";
+} else if (typeof document.mozHidden !== "undefined") {
+  hidden = "mozHidden";
+  visibilityChange = "mozvisibilitychange";
+} else if (typeof document.msHidden !== "undefined") {
+  hidden = "msHidden";
+  visibilityChange = "msvisibilitychange";
+} else if (typeof document.webkitHidden !== "undefined") {
+  hidden = "webkitHidden";
+  visibilityChange = "webkitvisibilitychange";
+}
+
+// If the page is hidden, pause the video;
+// if the page is shown, play the video
+function handleVisibilityChange() {
+  if (document[hidden]) {
+    VISIBLE = false;
+  } else {
+    VISIBLE = true;
+  }
+}
+
+if (typeof document.addEventListener === "undefined" || 
+  typeof hidden === "undefined") {
+} else {
+  // Handle page visibility change   
+  document.addEventListener(visibilityChange, handleVisibilityChange, false);
+}
+
 var target = {
   x: -2,
   y: 0,
@@ -153,8 +189,7 @@ function addEarth() {
   scene.add(pivot);
 }
 
-// I have no idea what I'm doing
-// This is from a chrome experiment
+// Calculate a Vector3 from given lat/long
 function latLonToVector3(lat, lon) {
   var point = new THREE.Vector3(0, 0, 0);
 
@@ -172,6 +207,7 @@ function latLonToVector3(lat, lon) {
   return point;
 };
 
+// Takes two points on the globe and turns them into a geometry with points
 function bezierCurveBetween(startVec3, endVec3, value) {
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
@@ -202,11 +238,10 @@ function bezierCurveBetween(startVec3, endVec3, value) {
   points = points.splice(0, points.length - 1);
   points = points.concat(splineCurveB.getPoints(vertexCountDesired));
 
-  // points.push(vec3_origin);
-
   return points;
 }
 
+// Stores a list of current line tweens
 var tweens = [];
 function tweenPoints(points) {
   var value = 10;
@@ -236,9 +271,9 @@ function tweenPoints(points) {
 function tweenPoint() {
   var i = tweens.length;
   while(i--) {
-    var tween = tweens[i];
-    var point = tween.points.shift();
-    var geometry = tween.geometry;
+    var tween = tweens[i],
+        point = tween.points[tween.n],
+        geometry = tween.geometry;
     for (var j = tween.n; j < geometry.vertices.length; j++) {
       geometry.vertices[j].set(point.x, point.y, point.z);
     }
@@ -277,8 +312,10 @@ for (var i = 0; i < 10; i++) {
     linewidth: 2
   }));
 }
+
+// Takes pub/sub data and converts them to lines
 function addData(publish, subscribes) {
-  // Remove current lines
+  // Remove current lines that are finished
   var i = lines.length;
   while(i--) {
     if (lines[i].geometry.finishedAnimation == true) {
@@ -287,6 +324,7 @@ function addData(publish, subscribes) {
     }
   }
 
+  // Stop drawing points that have been around too long
   var i = points.length;
   while(i--) {
     if (Date.now() - points[i].time > 1000) {
@@ -389,13 +427,17 @@ function render() {
 
 function animate() {
   requestAnimationFrame(animate);
-  render();
+  if (VISIBLE) {
+    render();
+  }
 }
 
 window.addEventListener('resize', onWindowResize);
 
 function handleMsg(msg) {
-  addData(msg.pub, msg.subs);
+  if (VISIBLE) {
+    addData(msg.pub, msg.subs);
+  }
 }
 
 var pubnub = PUBNUB.init({
