@@ -72,6 +72,11 @@
         margin-left: -144.5px;
         display: block;
         z-index: 201;
+        text-align: center;
+      }
+
+      #info a {
+        color: white;
       }
     </style>
   </head>
@@ -79,7 +84,11 @@
     <div id="globe">
       <div id="pubnub"></div>
       <div id="title">Real-Time Traffic</div>
-      <div id="info">Displaying less than 0.01% of real-time traffic</div>
+      <div id="info">
+        Displaying less than 0.01% of real-time traffic
+        <br>
+        Images Courtesy of <a href="http://visibleearth.nasa.gov/view.php?id=55167" target="_blank">NASA</a>, <a href="http://planetpixelemporium.com/earth.html" target="_blank">JHT</a>, and <a href="http://alexcpeterson.com/spacescape" target="_blank">Spacescape</a>
+      </div>
     </div>
     <div id="fullscreen"></div>
     <canvas id="canvas" width="1024" height="512" style="display: none;"></canvas>
