@@ -11,7 +11,7 @@ var IDLE_TIME = 1000 * 3;
 
 var FOV = 45;
 var NEAR = 1;
-var FAR = 4000;
+var FAR = 150000;
 
 // Use the visibility API to avoid creating a ton of data when the user is not looking
 var VISIBLE = true;
@@ -110,8 +110,19 @@ renderer.setClearColor(0x00000000, 0.0);
 var mapDiv = document.getElementById("globe");
 mapDiv.appendChild(renderer.domElement);
 
+// setup a camera that points to the center
+var camera = new THREE.PerspectiveCamera(FOV,WIDTH/HEIGHT,NEAR,FAR);
+camera.position.set(POS_X,POS_Y, POS_Z);
+camera.lookAt(new THREE.Vector3(0,0,0));
+
+// create a basic scene and add the camera
+var scene = new THREE.Scene();
+scene.add(camera);
+
 // Create background image scene
 var txt = THREE.ImageUtils.loadTexture('assets/galaxy_starfield.png');
+txt.wrapS = txt.wrapT = THREE.RepeatWrapping;
+txt.repeat.set(4, 4);
 var bgMesh = new THREE.Mesh(
   new THREE.PlaneGeometry(2, 2, 0),
   new THREE.MeshBasicMaterial({
@@ -124,16 +135,32 @@ bgMesh.material.depthWrite = false;
 var bgScene = new THREE.Scene();
 var bgCamera = new THREE.Camera();
 bgScene.add(bgCamera);
-bgScene.add(bgMesh);
+//bgScene.add(bgMesh);
+var urls = [
+  'assets/pos-x.png',
+  'assets/neg-x.png',
+  'assets/pos-y.png',
+  'assets/neg-y.png',
+  'assets/pos-z.png',
+  'assets/neg-z.png'
+];
 
-// setup a camera that points to the center
-var camera = new THREE.PerspectiveCamera(FOV,WIDTH/HEIGHT,NEAR,FAR);
-camera.position.set(POS_X,POS_Y, POS_Z);
-camera.lookAt(new THREE.Vector3(0,0,0));
+var cubemap = THREE.ImageUtils.loadTextureCube(urls);
+cubemap.format = THREE.RGBFormat;
 
-// create a basic scene and add the camera
-var scene = new THREE.Scene();
-scene.add(camera);
+var shader = THREE.ShaderLib["cube"];
+shader.uniforms["tCube"].value = cubemap;
+
+var material = new THREE.ShaderMaterial({
+  fragmentShader: shader.fragmentShader,
+  vertexShader: shader.vertexShader,
+  uniforms: shader.uniforms,
+  depthWrite: false,
+  side: THREE.BackSide
+});
+
+var skybox = new THREE.Mesh(new THREE.CubeGeometry(100000, 100000, 100000), material);
+scene.add(skybox);
 
 var pivot;
 function addEarth() {
@@ -143,7 +170,7 @@ function addEarth() {
   var shader = Shaders['earth'];
   uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-  uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world2.jpg');
+  uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world.jpg');
 
   material = new THREE.ShaderMaterial({
     uniforms: uniforms,

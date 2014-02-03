@@ -48,7 +48,18 @@
         background: url(assets/logo.png);
         background-size: cover;
         width: 200px;
-        height: 43px;
+        height: 45px;
+      }
+
+      #title {
+        position: absolute;
+        top: 28px !important;
+        left: 230px !important;
+        display: block;
+        color: white;
+        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        font-size: 34px;
+        z-index: 202;
       }
 
       #info {
@@ -67,6 +78,7 @@
   <body>
     <div id="globe">
       <div id="pubnub"></div>
+      <div id="title">Real-Time Traffic</div>
       <div id="info">Displaying less than 0.01% of real-time traffic</div>
     </div>
     <div id="fullscreen"></div>
