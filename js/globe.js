@@ -190,21 +190,21 @@ function latLonToVector3(lat, lon) {
 function bezierCurveBetween(startVec3, endVec3, value) {
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
-  var anchorHeight = 600 + distanceBetweenPoints * 0.5;
+  var anchorHeight = 600 + distanceBetweenPoints * 0.4;
 
   var mid = startVec3.clone().lerp(endVec3, 0.5);
   var midLength = mid.length();
   mid.normalize();
-  mid.multiplyScalar(midLength + distanceBetweenPoints * 0.5);
+  mid.multiplyScalar(midLength + distanceBetweenPoints * 0.4);
 
   var normal = (new THREE.Vector3()).subVectors(startVec3, endVec3);
   normal.normalize();
 
-  var distanceHalf = distanceBetweenPoints * 0.5;
+  var anchorScalar = distanceBetweenPoints * 0.4;
 
   var startAnchor = startVec3;
-  var midStartAnchor = mid.clone().add(normal.clone().multiplyScalar(distanceHalf));
-  var midEndAnchor = mid.clone().add(normal.clone().multiplyScalar(-distanceHalf));
+  var midStartAnchor = mid.clone().add(normal.clone().multiplyScalar(anchorScalar));
+  var midEndAnchor = mid.clone().add(normal.clone().multiplyScalar(-anchorScalar));
   var endAnchor = endVec3;
 
   // Now make a bezier curve
