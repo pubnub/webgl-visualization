@@ -260,7 +260,7 @@ function tweenPoint() {
     geometry.verticesNeedUpdate = true;
     tween.n++;
 
-    if (tween.points.length <= 0 || Date.now() - tween.time > 2000) {
+    if (tween.n === tween.points.length || Date.now() - tween.time > 2000) {
       geometry.finishedAnimation = true;
       tweens.splice(i, 1);
     }
