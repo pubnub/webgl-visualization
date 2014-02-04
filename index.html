@@ -4,6 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     
     <title>PubNub Real-Time WebGL Visualization</title>
+    <meta name="description" content="PubNub Real-Time WebGL Visualization" />
 
     <style>
       html, body {
@@ -78,6 +79,13 @@
       #info a {
         color: white;
       }
+
+      .share-btn {
+        position: absolute;
+        bottom: 20px;
+        left: 60px;
+        z-index: 203;
+      }
     </style>
   </head>
   <body>
@@ -92,6 +100,7 @@
         Source on <a href="http://github.com/pubnub/webgl-visualization" target="_blank">GitHub</a>
       </div>
     </div>
+    <div class="share-btn"></div>
     <div id="fullscreen"></div>
     <canvas id="canvas" width="1024" height="512" style="display: none;"></canvas>
     <script src="http://cdn.pubnub.com/pubnub.min.js"></script>
@@ -100,5 +109,14 @@
     <script src="js/visibility.js"></script>
     <script src="js/mousecontrols.js"></script>
     <script src="js/data.js"></script>
+
+    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+    <script src="js/share.min.js"></script>
+    <script>
+      $('.share-btn').share({
+        url: window.location.href,
+        flyout: 'top right'
+      });
+    </script>
   </body>
 </html>
