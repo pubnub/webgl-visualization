@@ -2,13 +2,13 @@
 // target: { x, y }
 // renderer: THREE.WebGLRenderer
 (function () {
-  var el = $(renderer.domElement),
+  var el = renderer.domElement,
       isDown = false,
       onDownMouse = { x: 0, y: 0 },
       targetDownMouse = { x: 0, y: 0 },
       interval = null;
 
-  el.on('mousedown', function (event) {
+  el.addEventListener('mousedown', function (event) {
     isDown = true;
 
     IDLE = false;
@@ -24,7 +24,7 @@
     };
   });
 
-  el.on('mouseup', function (event) {
+  el.addEventListener('mouseup', function (event) {
     isDown = false;
 
     clearTimeout(interval);
@@ -33,7 +33,7 @@
     }, IDLE_TIME);
   });
 
-  el.on('mousemove', function (event) {
+  el.addEventListener('mousemove', function (event) {
     if (isDown == true) {
       var mouseX = event.clientX,
           mouseY = -event.clientY;
@@ -54,7 +54,7 @@
     return false;
   });
 
-  $('#fullscreen').on('click', function (event) {
+  document.querySelector('#fullscreen').addEventListener('click', function (event) {
     var el = document.querySelector('#globe');
     if (el.requestFullScreen) el.requestFullScreen();
     if (el.webkitRequestFullScreen) el.webkitRequestFullScreen();

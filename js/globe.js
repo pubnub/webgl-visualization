@@ -1,53 +1,20 @@
 // couple of constants
-var POS_X = 1800;
-var POS_Y = 500;
-var POS_Z = 1800;
-var DISTANCE = 10000;
-var WIDTH = window.innerWidth;
-var HEIGHT = window.innerHeight;
-var PI_HALF = Math.PI / 2;
-var IDLE = true;
-var IDLE_TIME = 1000 * 3;
+var POS_X = 1800;                   // Initial camera pos x
+var POS_Y = 500;                    // Cam pos y
+var POS_Z = 1800;                   // Cam pos z
+var DISTANCE = 10000;               // Camera distance from globe
+var WIDTH = window.innerWidth;      // Canvas width
+var HEIGHT = window.innerHeight;    // Canvas height
+var PI_HALF = Math.PI / 2;          // Minor perf calculation
+var IDLE = true;                    // If user is using mouse to control
+var IDLE_TIME = 1000 * 3;           // Time before idle becomes true again
 
-var FOV = 45;
-var NEAR = 1;
-var FAR = 150000;
+var FOV = 45;                       // Camera field of view
+var NEAR = 1;                       // Camera near
+var FAR = 150000;                   // Draw distance
 
 // Use the visibility API to avoid creating a ton of data when the user is not looking
 var VISIBLE = true;
-
-// Set the name of the hidden property and the change event for visibility
-var hidden, visibilityChange; 
-if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
-  hidden = "hidden";
-  visibilityChange = "visibilitychange";
-} else if (typeof document.mozHidden !== "undefined") {
-  hidden = "mozHidden";
-  visibilityChange = "mozvisibilitychange";
-} else if (typeof document.msHidden !== "undefined") {
-  hidden = "msHidden";
-  visibilityChange = "msvisibilitychange";
-} else if (typeof document.webkitHidden !== "undefined") {
-  hidden = "webkitHidden";
-  visibilityChange = "webkitvisibilitychange";
-}
-
-// If the page is hidden, pause the video;
-// if the page is shown, play the video
-function handleVisibilityChange() {
-  if (document[hidden]) {
-    VISIBLE = false;
-  } else {
-    VISIBLE = true;
-  }
-}
-
-if (typeof document.addEventListener === "undefined" || 
-  typeof hidden === "undefined") {
-} else {
-  // Handle page visibility change   
-  document.addEventListener(visibilityChange, handleVisibilityChange, false);
-}
 
 var target = {
   x: -2,
@@ -119,23 +86,7 @@ camera.lookAt(new THREE.Vector3(0,0,0));
 var scene = new THREE.Scene();
 scene.add(camera);
 
-// Create background image scene
-var txt = THREE.ImageUtils.loadTexture('assets/galaxy_starfield.png');
-txt.wrapS = txt.wrapT = THREE.RepeatWrapping;
-txt.repeat.set(4, 4);
-var bgMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(2, 2, 0),
-  new THREE.MeshBasicMaterial({
-    map: txt,
-    depthTest: false,
-    depthWrite: false
-  }));
-bgMesh.material.depthTest = false;
-bgMesh.material.depthWrite = false;
-var bgScene = new THREE.Scene();
-var bgCamera = new THREE.Camera();
-bgScene.add(bgCamera);
-//bgScene.add(bgMesh);
+// Create the background cube map
 var urls = [
   'assets/pos-x.png',
   'assets/neg-x.png',
@@ -162,6 +113,7 @@ var material = new THREE.ShaderMaterial({
 var skybox = new THREE.Mesh(new THREE.CubeGeometry(100000, 100000, 100000), material);
 scene.add(skybox);
 
+// Function for adding the earth, atmosphere, and the moon
 var pivot;
 function addEarth() {
   // Add sphere earth geometry
@@ -234,7 +186,7 @@ function latLonToVector3(lat, lon) {
   return point;
 };
 
-// Takes two points on the globe and turns them into a geometry with points
+// Takes two points on the globe and turns them into a bezier curve point array
 function bezierCurveBetween(startVec3, endVec3, value) {
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
@@ -295,6 +247,7 @@ function tweenPoints(points) {
   return geometry;
 }
 
+// Steps the animations forward
 function tweenPoint() {
   var i = tweens.length;
   while(i--) {
@@ -359,6 +312,7 @@ function addData(publish, subscribes) {
     }
   }
 
+  // Convert lat/lon into 3d bezier curve and 2d texture point for drawing
   var pubLatLon = { lat: publish[0], lon: publish[1] };
   var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
   var materialIndex = Math.floor(Math.random() * 11);
@@ -385,6 +339,7 @@ function addData(publish, subscribes) {
   }
 }
 
+// Move the globe automatically if idle
 function checkIdle() {
   if (IDLE === true) {
     target.x -= 0.001;
@@ -396,6 +351,7 @@ function checkIdle() {
   }
 };
 
+// Add a canvas-based overlay to the globe that we can draw points on
 var overlay;
 function addOverlay() {
   var spGeo = new THREE.SphereGeometry(604, 50, 50);
@@ -412,16 +368,12 @@ function addOverlay() {
   scene.add(meshOverlay);
 }
 
-function onWindowResize(event) {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
+// Main render loop
 var rotation = { x: 0, y: 0 };
 function render() {
   tweenPoint();
 
+  // Draw our publish points every frame
   ctx.clearRect(0,0,1024,512);
   for (var i = 0; i < points.length; i++) {
     ctx.fillStyle = "#F1C40F";
@@ -441,6 +393,7 @@ function render() {
 
   checkIdle();
 
+  // Convert our 2d camera target into 3d world coords
   camera.position.x = DISTANCE * Math.sin(rotation.x) * Math.cos(rotation.y);
   camera.position.y = DISTANCE * Math.sin(rotation.y);
   camera.position.z = DISTANCE * Math.cos(rotation.x) * Math.cos(rotation.y);
@@ -448,7 +401,6 @@ function render() {
 
   renderer.autoClear = false;
   renderer.clear();
-  renderer.render( bgScene, bgCamera );
   renderer.render( scene, camera );
 }
 
@@ -459,25 +411,14 @@ function animate() {
   }
 }
 
-window.addEventListener('resize', onWindowResize);
-
-function handleMsg(msg) {
-  if (VISIBLE) {
-    addData(msg.pub, msg.subs);
-  }
+// Resizing the canvas based on window size
+function onWindowResize(event) {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-var pubnub = PUBNUB.init({
-  publish_key   : "demo",
-  subscribe_key : "e19f2bb0-623a-11df-98a1-fbd39d75aa3f"
-});
-
-pubnub.subscribe({
-  channel  : "real-time-stats-geostats",
-  callback : function(message) {
-    handleMsg(message);
-  }
-});
+window.addEventListener('resize', onWindowResize);
 
 addEarth();
 addOverlay();
