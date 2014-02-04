@@ -15,6 +15,7 @@
         font-family: 'Helvetica Neue', Helvetica, sans-serif;
         background: black;
         margin: 0;
+        overflow: hidden;
       }
 
       canvas {
@@ -89,6 +90,12 @@
     </style>
   </head>
   <body>
+    <script>
+      if (!window.WebGLRenderingContext) {
+        document.body.innerHTML = "Sorry your browser does not support WebGL. Please visit <a href='http://get.webgl.org'>http://get.webgl.org</a> for more information.";
+        return;
+      }
+    </script>
     <div id="globe">
       <div id="pubnub"></div>
       <div id="title">Real-Time Traffic</div>
@@ -104,6 +111,7 @@
     <div id="fullscreen"></div>
     <canvas id="canvas" width="1024" height="512" style="display: none;"></canvas>
     <script src="http://cdn.pubnub.com/pubnub.min.js"></script>
+    <script src="js/stats.min.js"></script>
     <script src="js/three.min.js"></script>
     <script src="js/globe.js"></script>
     <script src="js/visibility.js"></script>

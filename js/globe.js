@@ -16,6 +16,8 @@ var FAR = 150000;                   // Draw distance
 // Use the visibility API to avoid creating a ton of data when the user is not looking
 var VISIBLE = true;
 
+var DEBUG = false; // Show stats or not
+
 var target = {
   x: -2,
   y: 0,
@@ -260,7 +262,7 @@ function tweenPoint() {
     geometry.verticesNeedUpdate = true;
     tween.n++;
 
-    if (tween.n === tween.points.length || Date.now() - tween.time > 2000) {
+    if (tween.n === tween.points.length || Date.now() - tween.time > 10000) {
       geometry.finishedAnimation = true;
       tweens.splice(i, 1);
     }
@@ -404,10 +406,24 @@ function render() {
   renderer.render( scene, camera );
 }
 
+var stats = new Stats();
+stats.setMode(0); // 0: fps, 1: ms
+
+// Align top-left
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.right = '0px';
+stats.domElement.style.top = '0px';
+
+if (DEBUG) {
+  document.body.appendChild( stats.domElement );
+}
+
 function animate() {
   requestAnimationFrame(animate);
   if (VISIBLE) {
+    if (DEBUG) stats.begin();
     render();
+    if (DEBUG) stats.end();
   }
 }
 
