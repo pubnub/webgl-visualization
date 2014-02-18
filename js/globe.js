@@ -249,7 +249,7 @@ function getGeom(points) {
 };
 
 function returnGeom(geometry) {
-  geometry.dispose();
+  geometry.dispose(); 
   // if (geoms[geometry.vertices.length].length < 10) {
   //   geoms[geometry.vertices.length].push(geometry);
   // } else {
