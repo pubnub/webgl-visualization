@@ -222,31 +222,45 @@ function bezierCurveBetween(startVec3, endVec3, value) {
   return points;
 }
 
-// Stores a list of current line tweens
-var tweens = [];
-function tweenPoints(points) {
-  var value = 10;
-  var val = value * 0.0003;
+var geoms = [];
+for (var i = 0; i < 500; i++) {
+  geoms[i] = [];
+}
+function getGeom(points) {
+  var geometry;
 
-  var size = (10 + Math.sqrt(val));
-  size = constrain(size, 0.1, 60);
+  if (geoms[points.length].length > 0) {
+    geometry = geoms[points.length].pop();
+  }
 
-  var geometry = new THREE.Geometry();
-  geometry.dynamic = true;
+  if (!geometry) {
+    geometry = new THREE.Geometry();
+    geometry.dynamic = true;
+    geometry.size = 10.05477225575;
+  }
+
   geometry.finishedAnimation = false;
+
   for (var i = 0; i < points.length; i++) {
     geometry.vertices.push(new THREE.Vector3());
   }
-  geometry.size = size;
 
+  return geometry;
+};
+
+function returnGeom(geometry) {
+  geoms[geometry.vertices.length].push(geometry);
+}
+
+// Stores a list of current line tweens
+var tweens = [];
+function tweenPoints(geometry, points) {
   tweens.push({
     n: 0,
     points: points,
     geometry: geometry,
     time: Date.now()
   });
-
-  return geometry;
 }
 
 // Steps the animations forward
@@ -264,6 +278,7 @@ function tweenPoint() {
 
     if (tween.n === tween.points.length || Date.now() - tween.time > 10000) {
       geometry.finishedAnimation = true;
+      returnGeom(geometry);
       tweens.splice(i, 1);
     }
   }
@@ -333,7 +348,9 @@ function addData(publish, subscribes) {
     var subVec3 = latLonToVector3(subLatLon.lat, subLatLon.lon);
 
     var linePoints = bezierCurveBetween(pubVec3, subVec3);
-    var geometry = tweenPoints(linePoints);
+    var geometry = getGeom(linePoints);
+
+    tweenPoints(geometry, linePoints);
 
     var line = new THREE.Line(geometry, lineColors[materialIndex]);
     lines.push(line);
