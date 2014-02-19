@@ -249,11 +249,12 @@ function getGeom(points) {
 };
 
 function returnGeom(geometry) {
-  if (geoms[geometry.vertices.length].length < 10) {
-    geoms[geometry.vertices.length].push(geometry);
-  } else {
-    geometry.dispose();
-  }
+  geometry.dispose();
+  // if (geoms[geometry.vertices.length].length < 10) {
+  //   geoms[geometry.vertices.length].push(geometry);
+  // } else {
+  //   geometry.dispose();
+  // }
 }
 
 // Stores a list of current line tweens
