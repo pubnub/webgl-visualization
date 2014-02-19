@@ -325,15 +325,6 @@ function tweenPoint() {
   }
 }
 
-function constrain(v, min, max){
-  if( v < min )
-    v = min;
-  else
-  if( v > max )
-    v = max;
-  return v;
-}
-
 var lines = [],
     points = [],
     lineColors = [],
