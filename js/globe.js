@@ -122,17 +122,17 @@ function addEarth() {
   var spGeo = new THREE.SphereGeometry(600,50,50);
 
   var shader = Shaders['earth'];
-  uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+  var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
   uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world.jpg');
 
-  material = new THREE.ShaderMaterial({
+  var material = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: shader.vertexShader,
     fragmentShader: shader.fragmentShader
   });
 
-  mesh = new THREE.Mesh(spGeo, material);
+  var mesh = new THREE.Mesh(spGeo, material);
   scene.add(mesh);
 
   // Add atmosphere glow
@@ -157,11 +157,11 @@ function addEarth() {
   var geometry = new THREE.SphereGeometry(60, 50, 50);
 
   var tex = THREE.ImageUtils.loadTexture('assets/pubnub.png');
-  var material = new THREE.MeshBasicMaterial({
+  material = new THREE.MeshBasicMaterial({
     map: tex
   });
 
-  var mesh = new THREE.Mesh(geometry, material);
+  mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(300, 0, 1500);
   mesh.rotation.x -= 0.6;
   mesh.rotation.y -= 1;
@@ -189,7 +189,7 @@ function latLonToVector3(lat, lon) {
 };
 
 // Takes two points on the globe and turns them into a bezier curve point array
-function bezierCurveBetween(startVec3, endVec3, value) {
+function bezierCurveBetween(startVec3, endVec3) {
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
   var anchorHeight = 600 + distanceBetweenPoints * 0.4;
@@ -213,7 +213,7 @@ function bezierCurveBetween(startVec3, endVec3, value) {
   var splineCurveA = new THREE.CubicBezierCurve3(startVec3, startAnchor, midStartAnchor, mid);
   var splineCurveB = new THREE.CubicBezierCurve3(mid, midEndAnchor, endAnchor, endVec3);
 
-  var vertexCountDesired = Math.floor(distanceBetweenPoints * 0.02 + 6) * 2;
+  var vertexCountDesired = Math.floor(distanceBetweenPoints * 0.02 + 6);
 
   var points = splineCurveA.getPoints(vertexCountDesired);
   points = points.splice(0, points.length - 1);
@@ -223,23 +223,29 @@ function bezierCurveBetween(startVec3, endVec3, value) {
 }
 
 var geoms = [];
-for (var i = 0; i < 500; i++) {
-  geoms[i] = [];
-}
+(function () {
+  for (var i = 0; i < 500; i++) {
+    geoms[i] = [];
+  }
+})();
 function getGeom(points) {
   var geometry;
 
   if (geoms[points.length].length > 0) {
     geometry = geoms[points.length].pop();
+
+    var point = points[0];
+    for (var i = 0; i < points.length; i++) {
+      geometry.vertices[i].set(point.x, point.y, point.z);
+    }
+    geometry.verticesNeedUpdate = true;
+
+    return geometry;
   }
 
-  if (!geometry) {
-    geometry = new THREE.Geometry();
-    geometry.dynamic = true;
-    geometry.size = 10.05477225575;
-  }
-
-  geometry.finishedAnimation = false;
+  geometry = new THREE.Geometry();
+  geometry.dynamic = true;
+  geometry.size = 10.05477225575;
 
   for (var i = 0; i < points.length; i++) {
     geometry.vertices.push(new THREE.Vector3());
@@ -249,53 +255,74 @@ function getGeom(points) {
 };
 
 function returnGeom(geometry) {
-  geometry.dispose(); 
-  // if (geoms[geometry.vertices.length].length < 10) {
-  //   geoms[geometry.vertices.length].push(geometry);
-  // } else {
-  //   geometry.dispose();
-  // }
+  geoms[geometry.vertices.length].push(geometry);
+}
+
+/* Tween functions */
+
+// Linear
+function tweenFnLinear(elapsed) {
+  return elapsed;
+}
+
+// Ease In
+function tweenFnEaseIn(elapsed) {
+  return elapsed * elapsed * elapsed * elapsed;
+}
+
+// Ease Out
+function tweenFnEaseOut(elapsed) {
+  return 1 - (--elapsed * elapsed * elapsed * elapsed);
 }
 
 // Stores a list of current line tweens
 var tweens = [];
-function tweenPoints(geometry, points) {
-  tweens.push({
+function tweenPoints(geometry, points, duration, tweenFn) {
+  var tween = {
     n: 0,
     points: points,
     geometry: geometry,
-    time: Date.now()
-  });
+    time: Date.now(),
+    duration: duration,
+    tweenFn: tweenFn,
+    line: null
+  };
+  tweens.push(tween);
+  return tween;
 }
 
 // Steps the animations forward
 function tweenPoint() {
-  var i = tweens.length;
+  var i = tweens.length,
+      now = Date.now();
   while(i--) {
     var tween = tweens[i],
         point = tween.points[tween.n],
-        geometry = tween.geometry;
-    for (var j = tween.n; j < geometry.vertices.length; j++) {
-      geometry.vertices[j].set(point.x, point.y, point.z);
-    }
-    geometry.verticesNeedUpdate = true;
-    tween.n++;
+        geometry = tween.geometry,
+        geo_length = geometry.vertices.length,
+        elapsed = (now - tween.time) / tween.duration,
+        value = tween.tweenFn(elapsed > 1 ? 1 : elapsed),
+        next_n = Math.floor(geo_length * value);
 
-    if (tween.n === tween.points.length || Date.now() - tween.time > 10000) {
-      geometry.finishedAnimation = true;
+    if (next_n > tween.n) {
+      for (var j = tween.n; j < geo_length; j++) {
+        if (j < next_n)
+          point = tween.points[j];
+        geometry.vertices[j].set(point.x, point.y, point.z);
+      }
+      tween.n = next_n;
+
+      geometry.verticesNeedUpdate = true;
+    }
+
+    if (elapsed >= 1) {
+      var line = tween.line;
+      scene.remove(line);
+      lines.splice(lines.indexOf(line), 1);
       returnGeom(geometry);
       tweens.splice(i, 1);
     }
   }
-}
-
-function constrain(v, min, max){
-  if( v < min )
-    v = min;
-  else
-  if( v > max )
-    v = max;
-  return v;
 }
 
 var lines = [],
@@ -304,28 +331,21 @@ var lines = [],
     ctx = document.querySelector('#canvas').getContext('2d');
 
 // Generate a set of colors to use
-for (var i = 0; i < 10; i++) {
-  var c = new THREE.Color();
-  var x = Math.random();
-  c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
+(function (){
+  for (var i = 0; i < 10; i++) {
+    var c = new THREE.Color();
+    var x = Math.random();
+    c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
 
-  lineColors.push(new THREE.LineBasicMaterial({
-    color: c,
-    linewidth: 2
-  }));
-}
+    lineColors.push(new THREE.LineBasicMaterial({
+      color: c,
+      linewidth: 2
+    }));
+  }
+})();
 
 // Takes pub/sub data and converts them to lines
 function addData(publish, subscribes) {
-  // Remove current lines that are finished
-  var i = lines.length;
-  while(i--) {
-    if (lines[i].geometry.finishedAnimation == true) {
-      scene.remove(lines[i]);
-      lines.splice(i, 1);
-    }
-  }
-
   // Stop drawing points that have been around too long
   var i = points.length;
   while(i--) {
@@ -337,7 +357,7 @@ function addData(publish, subscribes) {
   // Convert lat/lon into 3d bezier curve and 2d texture point for drawing
   var pubLatLon = { lat: publish[0], lon: publish[1] };
   var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
-  var materialIndex = Math.floor(Math.random() * 11);
+  var materialIndex = Math.floor(Math.random() * 10);
 
   var pub_x =   ((1024/360.0) * (180 + pubLatLon.lon));
   var pub_y =   ((512/180.0) * (90 - pubLatLon.lat));
@@ -355,10 +375,16 @@ function addData(publish, subscribes) {
     var linePoints = bezierCurveBetween(pubVec3, subVec3);
     var geometry = getGeom(linePoints);
 
-    tweenPoints(geometry, linePoints);
+    var tween = tweenPoints(
+      geometry,
+      linePoints,
+      Math.random() * 500 + 200,
+      tweenFnEaseOut
+    );
 
     var line = new THREE.Line(geometry, lineColors[materialIndex]);
     lines.push(line);
+    tween.line = line;
     scene.add(line);
   }
 }
