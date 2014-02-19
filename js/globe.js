@@ -233,15 +233,19 @@ function getGeom(points) {
 
   if (geoms[points.length].length > 0) {
     geometry = geoms[points.length].pop();
+
+    var point = points[0];
+    for (var i = 0; i < points.length; i++) {
+      geometry.vertices[i].set(point.x, point.y, point.z);
+    }
+    geometry.verticesNeedUpdate = true;
+
+    return geometry;
   }
 
-  if (!geometry) {
-    geometry = new THREE.Geometry();
-    geometry.dynamic = true;
-    geometry.size = 10.05477225575;
-  }
-
-  geometry.finishedAnimation = false;
+  geometry = new THREE.Geometry();
+  geometry.dynamic = true;
+  geometry.size = 10.05477225575;
 
   for (var i = 0; i < points.length; i++) {
     geometry.vertices.push(new THREE.Vector3());
@@ -251,40 +255,70 @@ function getGeom(points) {
 };
 
 function returnGeom(geometry) {
-  geometry.dispose(); 
-  // if (geoms[geometry.vertices.length].length < 10) {
-  //   geoms[geometry.vertices.length].push(geometry);
-  // } else {
-  //   geometry.dispose();
-  // }
+  geoms[geometry.vertices.length].push(geometry);
+}
+
+/* Tween functions */
+
+// Linear
+function tweenFnLinear(elapsed) {
+  return elapsed;
+}
+
+// Ease In
+function tweenFnEaseIn(elapsed) {
+  return elapsed * elapsed * elapsed * elapsed;
+}
+
+// Ease Out
+function tweenFnEaseOut(elapsed) {
+  return 1 - (--elapsed * elapsed * elapsed * elapsed);
 }
 
 // Stores a list of current line tweens
 var tweens = [];
-function tweenPoints(geometry, points) {
-  tweens.push({
+function tweenPoints(geometry, points, duration, tweenFn) {
+  var tween = {
     n: 0,
     points: points,
     geometry: geometry,
-    time: Date.now()
-  });
+    time: Date.now(),
+    duration: duration,
+    tweenFn: tweenFn,
+    line: null
+  };
+  tweens.push(tween);
+  return tween;
 }
 
 // Steps the animations forward
 function tweenPoint() {
-  var i = tweens.length;
+  var i = tweens.length,
+      now = Date.now();
   while(i--) {
     var tween = tweens[i],
         point = tween.points[tween.n],
-        geometry = tween.geometry;
-    for (var j = tween.n; j < geometry.vertices.length; j++) {
-      geometry.vertices[j].set(point.x, point.y, point.z);
-    }
-    geometry.verticesNeedUpdate = true;
-    tween.n++;
+        geometry = tween.geometry,
+        geo_length = geometry.vertices.length,
+        elapsed = (now - tween.time) / tween.duration,
+        value = tween.tweenFn(elapsed > 1 ? 1 : elapsed),
+        next_n = Math.floor(geo_length * value);
 
-    if (tween.n === tween.points.length || Date.now() - tween.time > 10000) {
-      geometry.finishedAnimation = true;
+    if (next_n > tween.n) {
+      for (var j = tween.n; j < geo_length; j++) {
+        if (j < next_n)
+          point = tween.points[j];
+        geometry.vertices[j].set(point.x, point.y, point.z);
+      }
+      tween.n = next_n;
+
+      geometry.verticesNeedUpdate = true;
+    }
+
+    if (elapsed >= 1) {
+      var line = tween.line;
+      scene.remove(line);
+      lines.splice(lines.indexOf(line), 1);
       returnGeom(geometry);
       tweens.splice(i, 1);
     }
@@ -321,15 +355,6 @@ var lines = [],
 
 // Takes pub/sub data and converts them to lines
 function addData(publish, subscribes) {
-  // Remove current lines that are finished
-  var i = lines.length;
-  while(i--) {
-    if (lines[i].geometry.finishedAnimation == true) {
-      scene.remove(lines[i]);
-      lines.splice(i, 1);
-    }
-  }
-
   // Stop drawing points that have been around too long
   var i = points.length;
   while(i--) {
@@ -359,10 +384,16 @@ function addData(publish, subscribes) {
     var linePoints = bezierCurveBetween(pubVec3, subVec3);
     var geometry = getGeom(linePoints);
 
-    tweenPoints(geometry, linePoints);
+    var tween = tweenPoints(
+      geometry,
+      linePoints,
+      Math.random() * 500 + 200,
+      tweenFnEaseOut
+    );
 
     var line = new THREE.Line(geometry, lineColors[materialIndex]);
     lines.push(line);
+    tween.line = line;
     scene.add(line);
   }
 }
