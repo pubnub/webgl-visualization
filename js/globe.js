@@ -341,7 +341,7 @@ function addData(publish, subscribes) {
   // Convert lat/lon into 3d bezier curve and 2d texture point for drawing
   var pubLatLon = { lat: publish[0], lon: publish[1] };
   var pubVec3 = latLonToVector3(pubLatLon.lat, pubLatLon.lon);
-  var materialIndex = Math.floor(Math.random() * 11);
+  var materialIndex = Math.floor(Math.random() * 10);
 
   var pub_x =   ((1024/360.0) * (180 + pubLatLon.lon));
   var pub_y =   ((512/180.0) * (90 - pubLatLon.lat));
