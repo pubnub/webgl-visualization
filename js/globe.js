@@ -213,7 +213,7 @@ function bezierCurveBetween(startVec3, endVec3) {
   var splineCurveA = new THREE.CubicBezierCurve3(startVec3, startAnchor, midStartAnchor, mid);
   var splineCurveB = new THREE.CubicBezierCurve3(mid, midEndAnchor, endAnchor, endVec3);
 
-  var vertexCountDesired = Math.floor(distanceBetweenPoints * 0.02 + 6) * 2;
+  var vertexCountDesired = Math.floor(distanceBetweenPoints * 0.02 + 6);
 
   var points = splineCurveA.getPoints(vertexCountDesired);
   points = points.splice(0, points.length - 1);
