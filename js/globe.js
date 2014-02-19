@@ -236,7 +236,7 @@ function getGeom(points) {
 
     var point = points[0];
     for (var i = 0; i < points.length; i++) {
-      geometry.vertices[i].set(point.x, point.y, point.z);
+      geometry.vertices[i].set(0, 0, 0);
     }
     geometry.verticesNeedUpdate = true;
 
