@@ -122,17 +122,17 @@ function addEarth() {
   var spGeo = new THREE.SphereGeometry(600,50,50);
 
   var shader = Shaders['earth'];
-  uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+  var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
   uniforms['texture'].value = THREE.ImageUtils.loadTexture('assets/world.jpg');
 
-  material = new THREE.ShaderMaterial({
+  var material = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: shader.vertexShader,
     fragmentShader: shader.fragmentShader
   });
 
-  mesh = new THREE.Mesh(spGeo, material);
+  var mesh = new THREE.Mesh(spGeo, material);
   scene.add(mesh);
 
   // Add atmosphere glow
@@ -157,11 +157,11 @@ function addEarth() {
   var geometry = new THREE.SphereGeometry(60, 50, 50);
 
   var tex = THREE.ImageUtils.loadTexture('assets/pubnub.png');
-  var material = new THREE.MeshBasicMaterial({
+  material = new THREE.MeshBasicMaterial({
     map: tex
   });
 
-  var mesh = new THREE.Mesh(geometry, material);
+  mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(300, 0, 1500);
   mesh.rotation.x -= 0.6;
   mesh.rotation.y -= 1;
@@ -189,7 +189,7 @@ function latLonToVector3(lat, lon) {
 };
 
 // Takes two points on the globe and turns them into a bezier curve point array
-function bezierCurveBetween(startVec3, endVec3, value) {
+function bezierCurveBetween(startVec3, endVec3) {
   var distanceBetweenPoints = startVec3.clone().sub(endVec3).length();
 
   var anchorHeight = 600 + distanceBetweenPoints * 0.4;
@@ -223,9 +223,11 @@ function bezierCurveBetween(startVec3, endVec3, value) {
 }
 
 var geoms = [];
-for (var i = 0; i < 500; i++) {
-  geoms[i] = [];
-}
+(function () {
+  for (var i = 0; i < 500; i++) {
+    geoms[i] = [];
+  }
+})();
 function getGeom(points) {
   var geometry;
 
@@ -304,16 +306,18 @@ var lines = [],
     ctx = document.querySelector('#canvas').getContext('2d');
 
 // Generate a set of colors to use
-for (var i = 0; i < 10; i++) {
-  var c = new THREE.Color();
-  var x = Math.random();
-  c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
+(function (){
+  for (var i = 0; i < 10; i++) {
+    var c = new THREE.Color();
+    var x = Math.random();
+    c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
 
-  lineColors.push(new THREE.LineBasicMaterial({
-    color: c,
-    linewidth: 2
-  }));
-}
+    lineColors.push(new THREE.LineBasicMaterial({
+      color: c,
+      linewidth: 2
+    }));
+  }
+})();
 
 // Takes pub/sub data and converts them to lines
 function addData(publish, subscribes) {
