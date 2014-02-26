@@ -87,6 +87,20 @@
         left: 60px;
         z-index: 203;
       }
+
+      #qrcode {
+        position: absolute;
+        top: 0;
+        right: 20px;
+        color: #fff;
+        text-align: right;
+        font-size: 2em;
+        z-index: 300;
+      }
+
+      #qrcode img {
+        float: right;
+      }
     </style>
   </head>
   <body>
@@ -105,6 +119,12 @@
         Images Courtesy of <a href="http://visibleearth.nasa.gov/view.php?id=55167" target="_blank">NASA</a>, <a href="http://planetpixelemporium.com/earth.html" target="_blank">JHT</a>, and <a href="http://alexcpeterson.com/spacescape" target="_blank">Spacescape</a>
         <br>
         Source on <a href="http://github.com/pubnub/webgl-visualization" target="_blank">GitHub</a>
+      </div>
+
+      <div id="qrcode">
+        <p><h2>Remote Control:</h2></p>
+        <p>http://pubnub.github.io/webgl-controller</p>
+        <p><img src="assets/qrcode.png" alt="http://pubnub.github.io/webgl-controller"></p>
       </div>
     </div>
     <div class="share-btn"></div>
