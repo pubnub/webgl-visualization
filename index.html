@@ -87,6 +87,20 @@
         left: 60px;
         z-index: 203;
       }
+
+      #qrcode {
+        position: absolute;
+        top: 0;
+        right: 20px;
+        color: #fff;
+        text-align: right;
+        font-size: 2em;
+        z-index: 300;
+      }
+
+      #qrcode img {
+        float: right;
+      }
     </style>
   </head>
   <body>
@@ -106,6 +120,12 @@
         <br>
         Source on <a href="http://github.com/pubnub/webgl-visualization" target="_blank">GitHub</a>
       </div>
+
+      <div id="qrcode">
+        <p><h2>Remote Control:</h2></p>
+        <p>http://pubnub.github.io/webgl-controller</p>
+        <p><img src="assets/qrcode.png" alt="http://pubnub.github.io/webgl-controller"></p>
+      </div>
     </div>
     <div class="share-btn"></div>
     <div id="fullscreen"></div>
@@ -116,6 +136,7 @@
     <script src="js/globe.js"></script>
     <script src="js/visibility.js"></script>
     <script src="js/mousecontrols.js"></script>
+    <script src="js/pubnubcontrols.js"></script>
     <script src="js/data.js"></script>
 
     <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
