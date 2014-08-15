@@ -8,10 +8,27 @@ var pubnub = PUBNUB.init({
   publish_key   : "demo",
   subscribe_key : "e19f2bb0-623a-11df-98a1-fbd39d75aa3f"
 });
-
+var timeStamps = [];
 pubnub.subscribe({
-  channel  : "real-time-stats-geostats",
-  callback : function(message) {
-    handleMsg(message);
+  channel  : "rts-xNjiKP4Bg4jgElhhn9v9",
+  callback : function(msg){
+    timeStamps = timeStamps.concat(msg.geo_map);
   }
 });
+var z = setInterval(function() {
+  var x = exPubSub(timeStamps);
+  timeStamps = [];
+  var count = 0;
+  var k = setInterval(function() {
+    if (count >= 30) {
+      clearInterval(k);
+    }
+    if (typeof(x[count]) === "undefined") {
+      clearInterval(k);
+    }
+    else {
+      handleMsg(x[count]);
+      count++;
+    }
+  }, 100);
+}, 3000);
