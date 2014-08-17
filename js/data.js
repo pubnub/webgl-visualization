@@ -15,11 +15,13 @@ pubnub.subscribe({
     timeStamps = timeStamps.concat(msg.geo_map);
   }
 });
+var k;
 var z = setInterval(function() {
   var x = exPubSub(timeStamps);
   timeStamps = [];
   var count = 0;
-  var k = setInterval(function() {
+  clearInterval(k);
+  k = setInterval(function() {
     if (count >= 30) {
       clearInterval(k);
     }
