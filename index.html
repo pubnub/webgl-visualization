@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    
+
     <title>PubNub Real-Time WebGL Visualization</title>
     <meta name="description" content="PubNub Real-Time WebGL Visualization" />
 
@@ -48,7 +48,8 @@
         left: 20px !important;
         z-index: 200;
         background: url(assets/logo.png);
-        background-size: cover;
+        background-size: contain;
+        background-repeat: no-repeat;
         width: 200px;
         height: 45px;
       }
@@ -98,8 +99,20 @@
         z-index: 300;
       }
 
-      #qrcode img {
-        float: right;
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0turn);
+        }
+
+        100% {
+          -webkit-transform: rotate(1turn);
+        }
+      }
+
+      .spin {
+        -webkit-animation-name: spin;
+        -webkit-animation-duration: 1.5s;
+        -webkit-animation-iteration-count: infinite;
       }
     </style>
   </head>
@@ -107,7 +120,6 @@
     <script>
       if (!window.WebGLRenderingContext) {
         document.body.innerHTML = "Sorry your browser does not support WebGL. Please visit <a href='http://get.webgl.org'>http://get.webgl.org</a> for more information.";
-        return;
       }
     </script>
     <div id="globe">
@@ -122,9 +134,10 @@
       </div>
 
       <div id="qrcode">
-        <p><h2>Remote Control:</h2></p>
+        <p><h2>Play Me:</h2></p>
         <p>http://pubnub.github.io/webgl-controller</p>
         <p><img src="assets/qrcode.png" alt="http://pubnub.github.io/webgl-controller"></p>
+        <p>Active Players: <span id="active_players"><img src="assets/gear.png" alt="loading..." class="spin"></span></p>
       </div>
     </div>
     <div class="share-btn"></div>
