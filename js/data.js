@@ -10,7 +10,7 @@ var pubnub = PUBNUB.init({
 });
 var timeStamps = [];
 pubnub.subscribe({
-  channel  : "rts-xNjiKP4Bg4jgElhhn9v9",
+  channel  : "rts-xNjiKP4Bg4jgElhhn9v9-geo-map",
   callback : function(msg){
     timeStamps = timeStamps.concat(msg.geo_map);
   }
