@@ -19,7 +19,6 @@ function urlparams() {
 // Main
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 function main() {
-    console.log('lkasjdfl')
     var params = urlparams();
     if (!('hide' in params)) return;
     PUBNUB.each( params['hide'].split(','), function(id) {
