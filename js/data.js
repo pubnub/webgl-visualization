@@ -6,7 +6,8 @@ function handleMsg(msg) {
 
 var pubnub = PUBNUB.init({
   publish_key   : "demo",
-  subscribe_key : "e19f2bb0-623a-11df-98a1-fbd39d75aa3f"
+  subscribe_key : "e19f2bb0-623a-11df-98a1-fbd39d75aa3f",
+  ssl           : true
 });
 var timeStamps = [];
 pubnub.subscribe({
