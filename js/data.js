@@ -18,14 +18,13 @@ pubnub.subscribe({
 });
 setInterval(()=>{
     timeStamps = timeStamps.concat([{"lat":r()[0],"lng":r()[1],"geos":[r(),r(),r(),r()]}]);
-},500);
+},200);
 
-function r() {
+function rOld() {
     var latitude = Math.random() * (90.0 - -90.0) + -90.0;
     var longitude = Math.random() * (180.0 - -180.0) + -180.0;
     return [+latitude.toFixed(6), +longitude.toFixed(6)];
 }
-
 
 function r() {
     // Define bounding boxes for known countries
