@@ -372,6 +372,14 @@ function addData(publish, subscribes) {
     var subLatLon = { lat: subscribes[i][0], lon: subscribes[i][1] };
     var subVec3 = latLonToVector3(subLatLon.lat, subLatLon.lon);
 
+    var sub_x =   ((1024/360.0) * (180 + subLatLon.lon));
+    var sub_y =   ((512/180.0) * (90 - subLatLon.lat));
+    points.push({
+      x: sub_x,
+      y: sub_y,
+      time: Date.now()
+    });
+
     var linePoints = bezierCurveBetween(pubVec3, subVec3);
     var geometry = getGeom(linePoints);
 
