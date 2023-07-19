@@ -18,7 +18,7 @@ pubnub.subscribe({
 });
 setInterval(()=>{
     timeStamps = timeStamps.concat([{"lat":r()[0],"lng":r()[1],"geos":[r(),r(),r(),r()]}]);
-},200);
+},400);
 
 function rOld() {
     var latitude = Math.random() * (90.0 - -90.0) + -90.0;

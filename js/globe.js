@@ -335,11 +335,13 @@ var lines = [],
   for (var i = 0; i < 10; i++) {
     var c = new THREE.Color();
     var x = Math.random();
-    c.setHSL( (0.6 - ( x * 0.5 ) ), 1.0, 0.5);
 
-    lineColors.push(new THREE.LineBasicMaterial({
+    if     (x > .6) c.setHex(0xCD2026);
+    else if(x > .3) c.setHex(0x72A9AD);
+    else            c.setHex(0xCBD5E1);
+
+    lineColors.push(new THREE.LineDashedMaterial({
       color: c,
-      linewidth: 2
     }));
   }
 })();
@@ -386,7 +388,7 @@ function addData(publish, subscribes) {
     var tween = tweenPoints(
       geometry,
       linePoints,
-      Math.random() * 500 + 200,
+      Math.random() * 1000 + 200,
       tweenFnEaseOut
     );
 
@@ -434,7 +436,7 @@ function render() {
   // Draw our publish points every frame
   ctx.clearRect(0,0,1024,512);
   for (var i = 0; i < points.length; i++) {
-    ctx.fillStyle = "#F1C40F";
+    ctx.fillStyle = "#CBD5E1";
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
     ctx.arc(points[i].x, points[i].y, 7, 0, 2*Math.PI, false);
