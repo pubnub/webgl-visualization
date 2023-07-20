@@ -62,7 +62,7 @@ var Shaders = {
     fragmentShader: [
       'varying vec3 vNormal;',
       'void main() {',
-        'float intensity = pow( 0.8 - dot( vNormal, vec3( 0, 0, 1.0 ) ), 12.0 );',
+        'float intensity = pow( 0.7 - dot( vNormal, vec3( 0, 0, 1.0 ) ), 8.0 );',
         'gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 ) * intensity;',
       '}'
     ].join('\n')
@@ -71,7 +71,7 @@ var Shaders = {
 
 // some global variables and initialization code
 // simple basic renderer
-var renderer = new THREE.WebGLRenderer();
+var renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(WIDTH,HEIGHT);
 renderer.setClearColor(0x00000000, 0.0);
 
@@ -149,7 +149,7 @@ function addEarth() {
   });
 
   mesh = new THREE.Mesh(spGeo, material);
-  mesh.scale.set(1.1, 1.1, 1.1);
+  mesh.scale.set(1.15, 1.15, 1.15);
   scene.add(mesh);
 
   // Add moon
