@@ -154,6 +154,7 @@ function addEarth() {
 
   // Add moon
   pivot = new THREE.Object3D();
+  /*START COMMENT
   var geometry = new THREE.SphereGeometry(60, 50, 50);
 
   var tex = THREE.ImageUtils.loadTexture('assets/pubnub.png');
@@ -166,6 +167,7 @@ function addEarth() {
   mesh.rotation.x -= 0.6;
   mesh.rotation.y -= 1;
   mesh.rotation.z += 0;
+  END COMMENT*/
   pivot.add(mesh);
   scene.add(pivot);
 }
