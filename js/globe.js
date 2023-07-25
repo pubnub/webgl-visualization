@@ -404,7 +404,7 @@ function addData(publish, subscribes) {
 // Move the globe automatically if idle
 function checkIdle() {
   if (IDLE === true) {
-    target.x -= 0.001;
+    target.x -= 0.004;
 
     if (target.y > 0) target.y -= 0.001;
     if (target.y < 0) target.y += 0.001;
@@ -447,11 +447,11 @@ function render() {
 
   overlay.needsUpdate = true;
 
-  pivot.rotation.y += 0.01;
+  pivot.rotation.y += 0.10;
 
-  rotation.x += (target.x - rotation.x) * 0.1;
-  rotation.y += (target.y - rotation.y) * 0.1;
-  DISTANCE += (target.zoom - DISTANCE) * 0.3;
+  rotation.x += (target.x - rotation.x) * 0.05;
+  rotation.y += (target.y - rotation.y) * 0.05;
+  DISTANCE += (target.zoom - DISTANCE) * 0.05;
 
   checkIdle();
 
